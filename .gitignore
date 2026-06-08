@@ -1,8 +1,21 @@
+# General ignores
 venv/
 .env
 __pycache__/
+
+# Ignore logs, data, and model artifacts
 logs/
 data/
 model-store/
+
+# Ignore Python packaging artifacts
 *.egg-info
 .venv/
+
+# Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env.local
+.env.*.local

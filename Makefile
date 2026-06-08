@@ -1,7 +1,8 @@
 
 .PHONY: install sync \
         fetch-price fetch-data update-price process-data \
-        pipeline
+        pipeline \
+        backend frontend dashboard
 
 # ── Environment ──────────────────────────────────────────────────────────────
 
@@ -26,3 +27,11 @@ process-data:
 
 pipeline:
 	uv run pipeline
+
+# ── Dashboard ─────────────────────────────────────────────────────────────────
+
+backend:
+	cd packages/dashboard/backend && uv run uvicorn src.main:app --reload
+
+frontend:
+	cd packages/dashboard/frontend && npm run dev
