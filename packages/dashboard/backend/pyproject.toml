@@ -8,10 +8,14 @@ dependencies = [
     "pydantic-settings",
     "sqlalchemy",
     "market-lens-utils",
+    "yfinance>=1.4.1",
+    "pandas_market_calendars",
+    "market-lens-pipeline",
 ]
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 
 [tool.uv.sources]
 market-lens-utils = { workspace = true }
+market-lens-pipeline = { workspace = true }

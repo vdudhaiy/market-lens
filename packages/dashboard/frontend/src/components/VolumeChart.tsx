@@ -1,10 +1,18 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import type { OHLCV } from '../types'
 
+export function volUnit(data: { volume: number }[]): string {
+  const max = Math.max(...data.map(d => d.volume))
+  if (max >= 1e9) return 'B'
+  if (max >= 1e6) return 'M'
+  return 'K'
+}
+
 function fmtVol(v: number) {
-  if (v >= 1e9) return (v / 1e9).toFixed(1) + 'B'
-  if (v >= 1e6) return (v / 1e6).toFixed(0) + 'M'
-  return (v / 1e3).toFixed(0) + 'K'
+  if (v >= 1e9) return (v / 1e9).toFixed(2) + 'B'
+  if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M'
+  if (v >= 1e3) return (v / 1e3).toFixed(1) + 'K'
+  return v.toString()
 }
 
 interface Props {

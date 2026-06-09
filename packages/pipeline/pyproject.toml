@@ -10,10 +10,10 @@ dependencies = [
 ]
 
 [project.scripts]
-pipeline = "src.pipeline:main"
+pipeline = "market_lens_pipeline.pipeline:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 
 [tool.uv.sources]
 market-lens-utils = { workspace = true }

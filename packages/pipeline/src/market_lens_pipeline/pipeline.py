@@ -5,7 +5,7 @@ Main pipeline for the Market Lens project. This module orchestrates the entire d
 import argparse
 import os
 import json
-from utils.logs import setup_logger
+from market_lens_utils.logs import setup_logger
 from .fetchers.price import fetch_historical_price_data, append_price_data
 from .tickers import TICKERS as tickers
 from dotenv import load_dotenv
@@ -32,6 +32,7 @@ def main():
     
     argument_parser.add_argument('--fetch-data', action='store_true', help='Fetch all raw data (prices and news) from sources')
     argument_parser.add_argument('--fetch-price', action='store_true', help='Fetch historical price data')
+    argument_parser.add_argument('--fetch-price-force', action='store_true', help='Fetch historical price data and force refresh even if data already exists in archive')
     argument_parser.add_argument('--update-price', action='store_true', help='Update price data with the latest information')
     argument_parser.add_argument('--process-data', action='store_true', help='Process price data and generate features')
 
@@ -41,6 +42,7 @@ def main():
     if not any([
         args.fetch_data,
         args.fetch_price,
+        args.fetch_price_force,
         args.update_price,
         args.process_data
     ]):
@@ -58,6 +60,11 @@ def main():
         logger.info(f"Fetching historical price data for tickers...")
         for ticker in tickers:
             fetch_historical_price_data(ticker, start_date)
+    elif args.fetch_price_force:
+        # Call function to fetch historical price data with force refresh
+        logger.info(f"Fetching historical price data for tickers with force refresh...")
+        for ticker in tickers:
+            fetch_historical_price_data(ticker, start_date, force_refresh=True)
     elif args.update_price:
         # Call function to update price data with the latest information
         logger.info(f"Updating price data for tickers...")

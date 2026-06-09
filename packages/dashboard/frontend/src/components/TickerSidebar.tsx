@@ -1,26 +1,134 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import clsx from 'clsx'
-import { Search } from 'lucide-react'
+import { Search, ChevronDown, ChevronRight, BarChart2 } from 'lucide-react'
+import { fetchAllStocks, fetchIndustryMap, fetchSectorMap } from '../api'
+import type { GroupedStocks, ComparisonGroup } from '../types'
 
-const TICKERS = [
-  'AMD', 'APLD', 'AAOI', 'ACHR', 'ALAB', 'BMNR', 'BN', 'COHR', 'CRDO',
-  'CRM', 'GOOGL', 'HIMS', 'HOOD', 'IONQ', 'JOBY', 'MNTS', 'MRVL', 'MSFT',
-  'MU', 'NVDA', 'OKLO', 'ORCL', 'OSCR', 'PATH', 'PLTR', 'QCOM', 'QLYS',
-  'RDW', 'RGTI', 'SAP', 'SMCI', 'SOFI', 'SOUN', 'TEM', 'TSLA', 'VRT',
-]
+type SidebarTab = 'general' | 'industry' | 'sector'
 
 interface Props {
   selected: string
   onSelect: (ticker: string) => void
+  onCompare: (group: ComparisonGroup) => void
 }
 
-export function TickerSidebar({ selected, onSelect }: Props) {
-  const [search, setSearch] = useState('')
-  const filtered = TICKERS.filter(t => t.startsWith(search.toUpperCase()))
+function GroupSection({
+  name,
+  tickers,
+  type,
+  selected,
+  onSelect,
+  onCompare,
+}: {
+  name: string
+  tickers: string[]
+  type: 'industry' | 'sector'
+  selected: string
+  onSelect: (t: string) => void
+  onCompare: (g: ComparisonGroup) => void
+}) {
+  const [open, setOpen] = useState(true)
 
   return (
-    <aside className="w-48 shrink-0 border-r border-zinc-800 bg-zinc-950 flex flex-col">
-      <div className="p-3 border-b border-zinc-800">
+    <div>
+      <div className="group flex items-center px-3 py-2 hover:bg-zinc-900/50 transition-colors">
+        <button
+          onClick={() => setOpen(o => !o)}
+          className="flex items-center gap-1 flex-1 min-w-0 text-left"
+        >
+          {open
+            ? <ChevronDown size={11} className="shrink-0 text-zinc-500" />
+            : <ChevronRight size={11} className="shrink-0 text-zinc-500" />
+          }
+          <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider truncate ml-0.5">
+            {name}
+          </span>
+          <span className="ml-1.5 text-[10px] text-zinc-600 shrink-0">{tickers.length}</span>
+        </button>
+        <button
+          onClick={e => { e.stopPropagation(); onCompare({ name, tickers, type }) }}
+          title={`Compare ${type}`}
+          className="opacity-0 group-hover:opacity-100 p-1 rounded text-zinc-500 hover:text-indigo-400 hover:bg-zinc-800 transition-all shrink-0"
+        >
+          <BarChart2 size={12} />
+        </button>
+      </div>
+      {open && tickers.map(ticker => (
+        <button
+          key={ticker}
+          onClick={() => onSelect(ticker)}
+          className={clsx(
+            'w-full flex items-center pl-8 pr-3 py-2 text-left transition-colors',
+            selected === ticker
+              ? 'bg-indigo-500/10 text-indigo-300 border-r-2 border-indigo-500'
+              : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200',
+          )}
+        >
+          <span className="font-mono text-sm font-medium">{ticker}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+export function TickerSidebar({ selected, onSelect, onCompare }: Props) {
+  const [tab, setTab] = useState<SidebarTab>('general')
+  const [search, setSearch] = useState('')
+  const [allTickers, setAllTickers] = useState<string[]>([])
+  const [industryMap, setIndustryMap] = useState<GroupedStocks | null>(null)
+  const [sectorMap, setSectorMap] = useState<GroupedStocks | null>(null)
+  const [groupLoading, setGroupLoading] = useState(false)
+
+  useEffect(() => {
+    fetchAllStocks().then(setAllTickers).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (tab === 'industry' && industryMap === null) {
+      setGroupLoading(true)
+      fetchIndustryMap().then(setIndustryMap).catch(() => {}).finally(() => setGroupLoading(false))
+    } else if (tab === 'sector' && sectorMap === null) {
+      setGroupLoading(true)
+      fetchSectorMap().then(setSectorMap).catch(() => {}).finally(() => setGroupLoading(false))
+    }
+  }, [tab, industryMap, sectorMap])
+
+  const q = search.toUpperCase()
+  const filteredTickers = allTickers.filter(t => t.includes(q))
+
+  function filteredGroups(map: GroupedStocks): [string, string[]][] {
+    return Object.entries(map)
+      .map(([name, tickers]) => {
+        const matching = q ? tickers.filter(t => t.includes(q)) : tickers
+        return [name, matching] as [string, string[]]
+      })
+      .filter(([, tickers]) => tickers.length > 0)
+  }
+
+  const activeMap = tab === 'industry' ? industryMap : tab === 'sector' ? sectorMap : null
+
+  return (
+    <aside className="w-64 shrink-0 border-r border-zinc-800 bg-zinc-950 flex flex-col">
+      {/* Tab switcher */}
+      <div className="flex border-b border-zinc-800 shrink-0">
+        {(['general', 'industry', 'sector'] as SidebarTab[]).map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={clsx(
+              'flex-1 py-2.5 text-[11px] font-medium transition-colors capitalize',
+              tab === t
+                ? 'text-indigo-400 border-b-2 border-indigo-500 bg-indigo-500/5'
+                : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50',
+            )}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {/* Search */}
+      <div className="p-3 border-b border-zinc-800 shrink-0">
         <div className="relative">
           <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-600" />
           <input
@@ -32,24 +140,61 @@ export function TickerSidebar({ selected, onSelect }: Props) {
           />
         </div>
       </div>
+
+      {/* Content */}
       <div className="flex-1 overflow-y-auto py-1">
-        {filtered.length === 0 ? (
-          <p className="text-zinc-600 text-xs text-center py-4">No results</p>
-        ) : (
-          filtered.map(ticker => (
-            <button
-              key={ticker}
-              onClick={() => onSelect(ticker)}
-              className={clsx(
-                'w-full flex items-center px-4 py-2.5 text-left transition-colors',
-                selected === ticker
-                  ? 'bg-indigo-500/10 text-indigo-300 border-r-2 border-indigo-500'
-                  : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200',
-              )}
-            >
-              <span className="font-mono text-sm font-medium">{ticker}</span>
-            </button>
-          ))
+        {tab === 'general' && (
+          filteredTickers.length === 0
+            ? <p className="text-zinc-600 text-xs text-center py-4">No results</p>
+            : <>
+                <div className="group flex items-center px-3 py-2 border-b border-zinc-800/50 hover:bg-zinc-900/50 transition-colors">
+                  <span className="flex-1 text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                    All Stocks
+                  </span>
+                  <span className="text-[10px] text-zinc-600 mr-1.5">{filteredTickers.length}</span>
+                  <button
+                    onClick={() => onCompare({ name: 'All Stocks', tickers: filteredTickers, type: 'all' })}
+                    title="Compare all stocks"
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded text-zinc-500 hover:text-indigo-400 hover:bg-zinc-800 transition-all shrink-0"
+                  >
+                    <BarChart2 size={12} />
+                  </button>
+                </div>
+                {filteredTickers.map(ticker => (
+                  <button
+                    key={ticker}
+                    onClick={() => onSelect(ticker)}
+                    className={clsx(
+                      'w-full flex items-center px-4 py-2.5 text-left transition-colors',
+                      selected === ticker
+                        ? 'bg-indigo-500/10 text-indigo-300 border-r-2 border-indigo-500'
+                        : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200',
+                    )}
+                  >
+                    <span className="font-mono text-sm font-medium">{ticker}</span>
+                  </button>
+                ))}
+              </>
+        )}
+
+        {(tab === 'industry' || tab === 'sector') && (
+          groupLoading
+            ? <p className="text-zinc-600 text-xs text-center py-4">Loading...</p>
+            : activeMap === null
+              ? <p className="text-zinc-600 text-xs text-center py-4">No data</p>
+              : filteredGroups(activeMap).length === 0
+                ? <p className="text-zinc-600 text-xs text-center py-4">No results</p>
+                : filteredGroups(activeMap).map(([name, tickers]) => (
+                  <GroupSection
+                    key={name}
+                    name={name}
+                    tickers={tickers}
+                    type={tab === 'industry' ? 'industry' : 'sector'}
+                    selected={selected}
+                    onSelect={onSelect}
+                    onCompare={onCompare}
+                  />
+                ))
         )}
       </div>
     </aside>

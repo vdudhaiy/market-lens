@@ -7,7 +7,7 @@ from .routers import health
 
 app = FastAPI(
     title=os.getenv("APP_NAME", "Dashboard Backend API"),
-    openapi_url="/openapi.json",
+    openapi_url="/openapi",
     docs_url="/docs",
 )
 

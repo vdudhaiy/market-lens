@@ -25,4 +25,53 @@ export interface LatencyRecord {
   status: HealthStatus
 }
 
-export type View = 'dashboard' | 'health'
+export type View = 'home' | 'dashboard' | 'health'
+
+export interface RecommendationPeriod {
+  period?: string | null
+  // backend Pydantic uses snake_case; yfinance DataFrame uses camelCase — handle both
+  strong_buy?: number | null
+  strongBuy?: number | null
+  buy?: number | null
+  hold?: number | null
+  sell?: number | null
+  strong_sell?: number | null
+  strongSell?: number | null
+}
+
+export interface EarningsEstimateRow {
+  period?: string | null
+  number_of_analysts?: number | null
+  avg?: number | null
+  low?: number | null
+  high?: number | null
+  year_ago_eps?: number | null
+  growth?: number | null
+}
+
+export interface RevenueEstimateRow {
+  period?: string | null
+  number_of_analysts?: number | null
+  avg?: number | null
+  low?: number | null
+  high?: number | null
+  year_ago_revenue?: number | null
+  growth?: number | null
+}
+
+export interface StockDetails {
+  ticker: string
+  info?: Record<string, unknown> | null
+  analyst_price_targets?: Record<string, number | null> | null
+  recommendations_summary?: RecommendationPeriod[] | null
+  earnings_estimate?: EarningsEstimateRow[] | null
+  revenue_estimate?: RevenueEstimateRow[] | null
+}
+
+export type GroupedStocks = Record<string, string[]>
+
+export interface ComparisonGroup {
+  name: string
+  tickers: string[]
+  type: 'industry' | 'sector' | 'all'
+}

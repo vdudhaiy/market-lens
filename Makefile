@@ -16,6 +16,9 @@ sync: install
 fetch-price:
 	uv run pipeline --fetch-price
 
+force-fetch-price:
+	uv run pipeline --fetch-price-force
+
 fetch-data:
 	uv run pipeline --fetch-data
 
@@ -31,7 +34,7 @@ pipeline:
 # ── Dashboard ─────────────────────────────────────────────────────────────────
 
 backend:
-	cd packages/dashboard/backend && uv run uvicorn src.main:app --reload
+	cd packages/dashboard/backend/src && uv run uvicorn market_lens_dashboard.main:app --reload
 
 frontend:
 	cd packages/dashboard/frontend && npm run dev
