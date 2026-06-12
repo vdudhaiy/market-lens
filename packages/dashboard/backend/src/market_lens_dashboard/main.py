@@ -39,11 +39,6 @@ if _dist is not None:
     if _assets.is_dir():
         app.mount("/assets", StaticFiles(directory=_assets), name="static-assets")
 
-    @app.get("/{full_path:path}", include_in_schema=False)
-    async def serve_spa(full_path: str):
-        # Serve any file that exists in dist/ (favicon, robots.txt, etc.);
-        # fall back to index.html so client-side routing works.
-        candidate = _dist / full_path
-        if candidate.is_file():
-            return FileResponse(candidate)
+    @app.get("/", include_in_schema=False)
+    async def serve_root():
         return FileResponse(_dist / "index.html")
