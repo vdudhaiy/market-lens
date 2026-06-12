@@ -61,6 +61,15 @@ export async function fetchCurrentStock(ticker: string): Promise<OHLCVResponse> 
   return res.json()
 }
 
+export async function fetchIntradayStock(ticker: string): Promise<OHLCVResponse> {
+  const res = await fetch(`/stocks/${ticker}/intraday`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Request failed' }))
+    throw new Error(err.detail ?? `Failed to load intraday data for ${ticker}`)
+  }
+  return res.json()
+}
+
 export async function addStock(ticker: string): Promise<StockCreateResponse> {
   const res = await fetch(`/stocks/${encodeURIComponent(ticker)}`, { method: 'POST' })
   if (!res.ok) {

@@ -2,7 +2,8 @@
 .PHONY: install sync \
         fetch-price fetch-data update-price process-data \
         pipeline \
-        backend frontend dashboard
+        backend frontend dashboard \
+        release
 
 # ── Environment ──────────────────────────────────────────────────────────────
 
@@ -38,3 +39,10 @@ backend:
 
 frontend:
 	cd packages/dashboard/frontend && npm run dev
+
+# ── Release ───────────────────────────────────────────────────────────────────
+
+release:
+	cd packages/dashboard/frontend && npm run build
+	uv pip install --quiet pyinstaller
+	uv run pyinstaller market-lens.spec --noconfirm

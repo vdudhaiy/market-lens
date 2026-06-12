@@ -1,0 +1,78 @@
+name: Build Release Executables
+
+# Triggered when a version tag is pushed (e.g. git tag v1.0.0 && git push --tags).
+# Builds platform-specific binaries on Windows, macOS, and Linux, then attaches
+# them to the GitHub Release for that tag.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write   # required to create releases and upload assets
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false   # let other platforms finish even if one fails
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: market-lens-windows.exe
+            exe_path: dist/market-lens.exe
+          - os: macos-latest
+            artifact_name: market-lens-macos
+            exe_path: dist/market-lens
+          - os: ubuntu-latest
+            artifact_name: market-lens-linux
+            exe_path: dist/market-lens
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install Python dependencies
+        run: uv sync
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        working-directory: packages/dashboard/frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: packages/dashboard/frontend
+        run: npm run build
+
+      - name: Install PyInstaller
+        run: uv pip install pyinstaller
+
+      - name: Build executable
+        run: uv run pyinstaller market-lens.spec
+
+      - name: Rename executable
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            mv dist/market-lens.exe "dist/${{ matrix.artifact_name }}"
+          else
+            mv dist/market-lens "dist/${{ matrix.artifact_name }}"
+          fi
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ matrix.artifact_name }}

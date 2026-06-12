@@ -34,7 +34,7 @@ export function HomePage({ onNavigate }: Props) {
 
   useEffect(() => {
     fetchAllStocks()
-      .then(setStocks)
+      .then(data => setStocks(Object.keys(data)))
       .catch(() => setStocksError(true))
   }, [])
 

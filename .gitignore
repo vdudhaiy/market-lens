@@ -12,6 +12,9 @@ model-store/
 *.egg-info
 .venv/
 
+# PyInstaller build output (executables go to dist/, already ignored above)
+build/
+
 # Frontend
 node_modules/
 dist/

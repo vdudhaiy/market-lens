@@ -12,11 +12,12 @@ import { OHLCVStats } from './components/OHLCVStats'
 import { StockInfoCard } from './components/StockInfoCard'
 import { AnalystPanel } from './components/AnalystPanel'
 import { EarningsHistoryPanel } from './components/EarningsHistoryPanel'
-import { fetchAllStocks, fetchCurrentStock, fetchHealth, fetchMarketStatus, fetchStock, fetchStockDetails, fetchEpsHistory, fetchRevenueHistory, deleteStock } from './api'
-import { parseEtDateStr, fmtHHMMWithTz, etToLocalHHMM, localTzAbbr } from './utils/time'
+import { fetchAllStocks, fetchCurrentStock, fetchHealth, fetchIntradayStock, fetchMarketStatus, fetchStock, fetchStockDetails, fetchEpsHistory, fetchRevenueHistory, deleteStock } from './api'
+import { parseEtDateStr, fmtHHMMWithTz, etToLocalHHMM, localTzAbbr, formatEtDate, formatLocalDate } from './utils/time'
 import type { OHLCV, HealthInfo, LatencyRecord, View, StockDetails, StockMap, ComparisonGroup, EPSHistoryRow, RevenueHistoryRow } from './types'
 
 const DAYS_OPTIONS = [
+  { label: '1D', value: 0 },
   { label: '7D', value: 7 },
   { label: '14D', value: 14 },
   { label: '30D', value: 30 },
@@ -49,6 +50,7 @@ export default function App() {
   const [showMarketHours, setShowMarketHours] = useState(false)
   const [epsHistory, setEpsHistory] = useState<EPSHistoryRow[] | null>(null)
   const [revenueHistory, setRevenueHistory] = useState<RevenueHistoryRow[] | null>(null)
+  const [intradayData, setIntradayData] = useState<OHLCV[] | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
@@ -154,21 +156,32 @@ export default function App() {
       setDetails(null)
       setEpsHistory(null)
       setRevenueHistory(null)
+      setIntradayData(null)
     }
+
+    // When in 1D mode, fetch regular daily data at 30D for header metrics
+    const effectiveDays = days === 0 ? 30 : days
 
     try {
       if (isNewTicker) {
-        const [ohlcvRes, detailsRes, epsRes, revenueRes] = await Promise.all([
-          fetchStock(ticker, days),
+        const [ohlcvRes, detailsRes, epsRes, revenueRes, intradayRes] = await Promise.all([
+          fetchStock(ticker, effectiveDays),
           fetchStockDetails(ticker).catch(() => null),
           fetchEpsHistory(ticker).catch(() => null),
           fetchRevenueHistory(ticker).catch(() => null),
+          days === 0 ? fetchIntradayStock(ticker).catch(() => null) : Promise.resolve(null),
         ])
         if (gen !== loadGen.current) return
         setData(ohlcvRes.data)
         setDetails(detailsRes)
         setEpsHistory(epsRes?.earnings_history ?? null)
         setRevenueHistory(revenueRes?.revenue_history ?? null)
+        setIntradayData(intradayRes?.data ?? null)
+      } else if (days === 0) {
+        // Switching into 1D mode — only fetch intraday, keep existing daily data for header
+        const intradayRes = await fetchIntradayStock(ticker)
+        if (gen !== loadGen.current) return
+        setIntradayData(intradayRes.data)
       } else {
         // Only days changed — details are still valid
         const ohlcvRes = await fetchStock(ticker, days)
@@ -182,6 +195,7 @@ export default function App() {
         setData([])
         setEpsHistory(null)
         setRevenueHistory(null)
+        setIntradayData(null)
       }
     } finally {
       if (gen === loadGen.current) setLoading(false)
@@ -211,6 +225,9 @@ export default function App() {
   const today = new Date().toISOString().slice(0, 10)
   // Strip today's entry unless market is confirmed closed — partial candles skew the chart
   const displayData = marketOpen !== false ? data.filter(d => d.date !== today) : data
+
+  // For charts: use intraday data in 1D mode, otherwise the regular daily series
+  const chartData = days === 0 ? (intradayData ?? []) : displayData
 
   const latest = displayData[displayData.length - 1]
   const prev = displayData[displayData.length - 2]
@@ -467,21 +484,34 @@ export default function App() {
                     </button>
                   </div>
                 </div>
-              ) : loading && data.length === 0 ? (
+              ) : loading && chartData.length === 0 ? (
                 <div className="flex items-center justify-center h-64 bg-zinc-900 border border-zinc-800 rounded-xl">
                   <div className="flex items-center gap-2 text-zinc-500 text-sm">
                     <RefreshCw size={13} className="animate-spin" />
                     Loading {ticker}...
                   </div>
                 </div>
-              ) : displayData.length > 0 ? (
+              ) : chartData.length > 0 ? (
                 <>
                   <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-4">
-                    <p className="text-[10px] text-zinc-500 tracking-widest font-medium mb-3">
-                      CLOSE PRICE
-                    </p>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[10px] text-zinc-500 tracking-widest font-medium">
+                        CLOSE PRICE
+                      </p>
+                      {days === 0 && chartData.length > 0 && (() => {
+                        const dateStr = chartData[0].date.slice(0, 10)
+                        const etDate = formatEtDate(dateStr)
+                        const localDate = formatLocalDate(dateStr)
+                        const tz = localTzAbbr()
+                        return (
+                          <span className="text-[10px] font-mono text-zinc-500">
+                            {etDate} ET{etDate !== localDate ? ` (${localDate} ${tz})` : ` (${tz})`}
+                          </span>
+                        )
+                      })()}
+                    </div>
                     <div className="h-64">
-                      <PriceChart data={displayData} days={days} />
+                      <PriceChart data={chartData} days={days} />
                     </div>
                   </div>
 
@@ -493,10 +523,10 @@ export default function App() {
 
                   <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-4">
                     <p className="text-[10px] text-zinc-500 tracking-widest font-medium mb-3">
-                      VOLUME ({volUnit(displayData)})
+                      VOLUME ({volUnit(chartData)})
                     </p>
                     <div className="h-36">
-                      <VolumeChart data={displayData} days={days} />
+                      <VolumeChart data={chartData} days={days} />
                     </div>
                   </div>
 

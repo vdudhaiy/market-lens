@@ -63,6 +63,18 @@ async def get_current_stock_price(ticker: str):
     return await stock_service.fetch_current(ticker)
 
 
+@router.get("/{ticker}/intraday", response_model=OHLCVResponse)
+async def get_intraday_stock_data(ticker: str):
+    '''
+    Get intraday stock data for a given ticker.
+    Args:
+        ticker (str): The stock ticker symbol.
+    Returns:
+        OHLCVResponse: The intraday stock data for the specified ticker.
+    '''
+    return await stock_service.fetch_intraday(ticker)
+
+
 @router.get("/{ticker}", response_model=OHLCVResponse)
 async def get_stock(ticker: str, days: int = 30):
     '''

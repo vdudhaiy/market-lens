@@ -9,7 +9,7 @@ import {
   ReferenceLine,
 } from 'recharts'
 import type { OHLCV } from '../types'
-import { computeXTicks, xTickFormatter } from '../utils/chart'
+import { computeXTicks, xTickFormatter, computeIntradayTicks, intradayTickFormatter } from '../utils/chart'
 
 interface TooltipProps {
   active?: boolean
@@ -19,9 +19,10 @@ interface TooltipProps {
 function CustomTooltip({ active, payload }: TooltipProps) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
+  const isIntraday = d.date.includes('T')
   return (
     <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 shadow-xl text-xs font-mono">
-      <p className="text-zinc-400 mb-2">{d.date}</p>
+      <p className="text-zinc-400 mb-2">{isIntraday ? d.date.slice(11, 16) : d.date}</p>
       <div className="grid grid-cols-2 gap-x-5 gap-y-1">
         <span className="text-zinc-500">O</span>
         <span className="text-zinc-200">${d.open?.toFixed(2) ?? '—'}</span>
@@ -44,7 +45,11 @@ interface Props {
 export function PriceChart({ data, days }: Props) {
   if (data.length === 0) return null
 
-  const xTicks = computeXTicks(data.map(d => d.date), days)
+  const isIntraday = days === 0
+  const xTicks = isIntraday
+    ? computeIntradayTicks(data.map(d => d.date))
+    : computeXTicks(data.map(d => d.date), days)
+  const tickFmt = (v: string) => isIntraday ? intradayTickFormatter(v) : xTickFormatter(v, days)
 
   const min = Math.min(...data.map(d => d.low ?? d.close)) * 0.99
   const max = Math.max(...data.map(d => d.high ?? d.close)) * 1.01
@@ -70,7 +75,7 @@ export function PriceChart({ data, days }: Props) {
           axisLine={false}
           ticks={xTicks}
           interval={0}
-          tickFormatter={v => xTickFormatter(v, days)}
+          tickFormatter={tickFmt}
         />
         <YAxis
           domain={[min, max]}

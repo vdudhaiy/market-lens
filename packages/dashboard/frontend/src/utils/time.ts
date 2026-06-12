@@ -66,3 +66,20 @@ export function localTzAbbr(): string {
       .find(p => p.type === 'timeZoneName')?.value ?? ''
   )
 }
+
+/** Format an ET calendar date string ("YYYY-MM-DD") as "Mon D, YYYY" in ET. */
+export function formatEtDate(etDateStr: string): string {
+  const d = parseEtDateStr(`${etDateStr}T12:00`)
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    month: 'short', day: 'numeric', year: 'numeric',
+  }).format(d)
+}
+
+/** Format an ET calendar date string ("YYYY-MM-DD") as "Mon D, YYYY" in the user's local timezone. */
+export function formatLocalDate(etDateStr: string): string {
+  const d = parseEtDateStr(`${etDateStr}T12:00`)
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+  }).format(d)
+}

@@ -68,3 +68,18 @@ export function xTickFormatter(dateStr: string, days: number): string {
   }
   return dateStr.slice(5) // MM-DD
 }
+
+// Hour marks to show on intraday charts: market open + every whole hour until close
+const INTRADAY_HOUR_MARKS = new Set(['09:30', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'])
+
+/** Return the subset of intraday date strings that fall on hourly tick marks. */
+export function computeIntradayTicks(dates: string[]): string[] {
+  return dates.filter(d => INTRADAY_HOUR_MARKS.has(d.slice(11, 16)))
+}
+
+/** Format an intraday datetime string ("YYYY-MM-DDTHH:MM") as "H:MM". */
+export function intradayTickFormatter(dateStr: string): string {
+  const h = parseInt(dateStr.slice(11, 13), 10)
+  const m = dateStr.slice(14, 16)
+  return `${h}:${m}`
+}

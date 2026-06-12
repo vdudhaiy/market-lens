@@ -116,6 +116,42 @@ async def delete_stock(ticker: str):
         raise ValueError(f"Error deleting stock data for {ticker}: {str(e)}")
 
 
+async def fetch_intraday(ticker: str):
+    '''
+    Fetch intraday stock data for a given ticker.
+    Args:
+        ticker (str): The stock ticker symbol.
+    '''
+    try:
+        stock = yf.Ticker(ticker)
+        
+        df_current = stock.history(
+                interval="15m",
+                period="1d",
+                prepost=True
+            )
+        # Convert index and filter to Regular Trading Hours only
+        df = df_current.copy()
+        df.index = pd.to_datetime(df.index)
+        mask = ((df.index.time >= time(9, 30)) & (df.index.time <= time(16, 0)))
+        df = df[mask]
+        if df.empty:
+            raise ValueError(f"No intraday data available for {ticker}")
+        return OHLCVResponse(
+            ticker=ticker,
+            data=[OHLCV(
+                date=row.name.strftime("%Y-%m-%dT%H:%M"),
+                open=float(row["Open"]) if not pd.isna(row["Open"]) else None,
+                high=float(row["High"]) if not pd.isna(row["High"]) else None,
+                low=float(row["Low"]) if not pd.isna(row["Low"]) else None,
+                close=float(row["Close"]) if not pd.isna(row["Close"]) else None,
+                volume=int(row["Volume"]) if not pd.isna(row["Volume"]) else None,
+            ) for _, row in df.iterrows()]
+        )
+    except Exception as e:
+        raise ValueError(f"Error fetching current stock data for {ticker}: {str(e)}")
+
+
 async def fetch(ticker: str, days: int = 30):
     '''
     Fetch stock data for a given ticker and number of days. If data is outdated, use pipeline's price fetcher to get the latest data and update the archive. Ensure that no new data is fetched if the current date is a weekend.

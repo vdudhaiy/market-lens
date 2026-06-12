@@ -1,6 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import type { OHLCV } from '../types'
-import { computeXTicks, xTickFormatter } from '../utils/chart'
+import { computeXTicks, xTickFormatter, computeIntradayTicks, intradayTickFormatter } from '../utils/chart'
 
 export function volUnit(data: { volume: number | null }[]): string {
   const max = Math.max(...data.map(d => d.volume ?? 0))
@@ -24,7 +24,11 @@ interface Props {
 export function VolumeChart({ data, days }: Props) {
   if (data.length === 0) return null
 
-  const xTicks = computeXTicks(data.map(d => d.date), days)
+  const isIntraday = days === 0
+  const xTicks = isIntraday
+    ? computeIntradayTicks(data.map(d => d.date))
+    : computeXTicks(data.map(d => d.date), days)
+  const tickFmt = (v: string) => isIntraday ? intradayTickFormatter(v) : xTickFormatter(v, days)
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -36,7 +40,7 @@ export function VolumeChart({ data, days }: Props) {
           axisLine={false}
           ticks={xTicks}
           interval={0}
-          tickFormatter={v => xTickFormatter(v, days)}
+          tickFormatter={tickFmt}
         />
         <YAxis
           tick={{ fill: '#71717a', fontSize: 10, fontFamily: 'JetBrains Mono' }}
