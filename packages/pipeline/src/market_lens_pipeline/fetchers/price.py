@@ -13,8 +13,15 @@ from datetime import datetime, timezone, timedelta
 
 dotenv.load_dotenv()
 
-_REPO_ROOT = Path(__file__).resolve().parents[5]
-ARCHIVE_DATA_DIR = _REPO_ROOT / os.getenv("ARCHIVE_DATA_DIR", "data/archive_stock_data/")
+
+def _archive_base() -> Path:
+    override = os.getenv("MARKET_LENS_DATA_DIR")
+    if override:
+        return Path(override)
+    return Path(__file__).resolve().parents[5]
+
+
+ARCHIVE_DATA_DIR = _archive_base() / os.getenv("ARCHIVE_DATA_DIR", "data/archive_stock_data/")
 
 logger = logging.getLogger(__name__)
 

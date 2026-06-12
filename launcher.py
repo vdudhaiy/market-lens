@@ -40,7 +40,7 @@ def main():
 
     # Point backend config at the writable data folder.
     # setdefault so an explicit env var from the shell still wins.
-    os.environ.setdefault("MARKET_LENS_DATA_DIR", str(data_dir))
+    os.environ["MARKET_LENS_DATA_DIR"] = str(data_dir)
 
     import uvicorn
     from market_lens_dashboard.main import app  # noqa: F401 — imported for side-effects (route registration)
