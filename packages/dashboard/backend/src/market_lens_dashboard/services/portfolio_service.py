@@ -137,6 +137,7 @@ def _build_stock_holding(holding: Holding, transactions: list[Transaction], pric
             shares=txn.shares,
             bought_at=txn.bought_at,
             sold_at=txn.sold_at,
+            shares_remaining=txn.shares_remaining,
         )
         for txn in transactions
     ]
@@ -296,6 +297,26 @@ async def delete_stock_holding(session: AsyncSession, ticker: str):
     except Exception:
         pass  # not in dashboard archive — nothing to remove
     return {"message": f"Holding for {ticker} deleted successfully."}
+
+
+async def repair_all_fifo() -> None:
+    """Replay FIFO for every holding to fix shares_remaining after a schema migration.
+
+    Safe to call on every startup — _replay_fifo is idempotent.
+    """
+    from ..database import SessionLocal
+    async with SessionLocal() as session:
+        result = await session.execute(select(Holding))
+        holdings = list(result.scalars().all())
+        for holding in holdings:
+            transactions = await _fetch_transactions(session, holding.id)
+            if not transactions:
+                continue
+            try:
+                _replay_fifo(holding, transactions)
+            except ValueError:
+                pass  # corrupt state — leave as-is rather than crashing startup
+        await session.commit()
 
 
 async def get_portfolio(session: AsyncSession, prices: dict[str, float] | None = None) -> PortfolioResponse:

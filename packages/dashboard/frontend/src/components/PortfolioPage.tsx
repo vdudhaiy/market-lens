@@ -15,13 +15,6 @@ const fmt = (n: number) =>
 
 const fmtCcy = (n: number) => `$${fmt(Math.abs(n))}`
 
-const fmtK = (n: number) => {
-  const abs = Math.abs(n)
-  const prefix = n < 0 ? '-' : ''
-  if (abs >= 1_000_000) return `${prefix}$${(abs / 1_000_000).toFixed(2)}M`
-  if (abs >= 10_000)    return `${prefix}$${(abs / 1_000).toFixed(1)}k`
-  return `${prefix}$${fmt(abs)}`
-}
 
 const fmtPct = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`
 const sign   = (n: number) => n >= 0 ? '+' : '−'
@@ -279,6 +272,9 @@ function TxRow({ txn, onDeleteRequest }: { txn: StockPurchaseHistory; onDeleteRe
         </span>
       </td>
       <td className="px-5 py-2.5 font-mono text-xs text-zinc-300">{txn.shares}</td>
+      <td className="px-5 py-2.5 font-mono text-xs text-zinc-400">
+        {txn.sale ? <span className="text-zinc-700">—</span> : txn.shares_remaining}
+      </td>
       <td className="px-5 py-2.5 font-mono text-xs text-zinc-400">${fmt(txn.bought_at)}</td>
       <td className="px-5 py-2.5 font-mono text-xs text-zinc-400">
         {txn.sale ? `$${fmt(txn.sold_at)}` : <span className="text-zinc-700">—</span>}
@@ -444,7 +440,7 @@ function HoldingRow({
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-zinc-800/40">
-                    {['Date', 'Type', 'Shares', 'Bought @', 'Sold @', 'P&L', ''].map(col => (
+                    {['Date', 'Type', 'Shares', 'Remaining', 'Bought @', 'Sold @', 'P&L', ''].map(col => (
                       <th
                         key={col}
                         className="px-5 py-2 text-left text-[10px] tracking-widest text-zinc-600 font-semibold whitespace-nowrap"
@@ -626,28 +622,28 @@ export function PortfolioPage({
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               <StatCard
                 label="PORTFOLIO VALUE"
-                value={fmtK(portfolio.portfolio_value)}
+                value={fmtCcy(portfolio.portfolio_value)}
                 accent
               />
               <StatCard
                 label="COST BASIS"
-                value={fmtK(portfolio.total_invested)}
+                value={fmtCcy(portfolio.total_invested)}
               />
               <StatCard
                 label="UNREALIZED RETURN"
-                value={`${sign(totalRet)}${fmtK(Math.abs(totalRet))}`}
+                value={`${sign(totalRet)}${fmtCcy(Math.abs(totalRet))}`}
                 valueColor={gainText(totalRet)}
                 sub={fmtPct(portfolio.return_percentage)}
                 subColor={gainText(totalRet)}
               />
               <StatCard
                 label="REALIZED GAINS"
-                value={fmtK(portfolio.realized_gains)}
+                value={fmtCcy(portfolio.realized_gains)}
                 valueColor={portfolio.realized_gains > 0 ? gainText(1) : undefined}
               />
               <StatCard
                 label="NET P&L"
-                value={`${sign(netPl)}${fmtK(Math.abs(netPl))}`}
+                value={`${sign(netPl)}${fmtCcy(Math.abs(netPl))}`}
                 valueColor={gainText(netPl)}
               />
             </div>
@@ -693,7 +689,7 @@ export function PortfolioPage({
                     {holdings.length} position{holdings.length !== 1 ? 's' : ''} · {portfolio.total_shares} shares held
                   </span>
                   <span className={clsx('text-xs font-mono font-semibold', gainText(netPl))}>
-                    Net {sign(netPl)}{fmtK(Math.abs(netPl))}
+                    Net {sign(netPl)}{fmtCcy(Math.abs(netPl))}
                   </span>
                 </div>
               </div>

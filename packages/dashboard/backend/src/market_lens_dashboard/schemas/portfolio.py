@@ -13,6 +13,7 @@ class StockPurchaseHistory(BaseModel):
     shares: int
     bought_at: float = 0.0     # price per share on a buy; FIFO avg cost on sells
     sold_at: float = 0.0       # price per share on a sell; 0 on buys
+    shares_remaining: int = 0  # unsold shares from this buy lot; always 0 for sells
 
 
 class StockHolding(BaseModel):

@@ -11,11 +11,13 @@ from fastapi.staticfiles import StaticFiles
 
 from .database import init_db
 from .routers import health, portfolio, stocks
+from .services.portfolio_service import repair_all_fifo
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    await repair_all_fifo()
     yield
 
 

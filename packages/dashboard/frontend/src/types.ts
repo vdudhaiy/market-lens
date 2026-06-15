@@ -116,6 +116,7 @@ export interface StockPurchaseHistory {
   shares: number
   bought_at: number
   sold_at: number
+  shares_remaining: number
 }
 
 export interface StockHolding {
