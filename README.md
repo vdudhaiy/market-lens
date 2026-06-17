@@ -1,6 +1,8 @@
 # Market Lens
 
-**A free, open-source desktop app for monitoring stock market trends.**
+**Open Markets. Open Insights.**
+
+A free, open-source desktop app for monitoring stock market trends.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12%2B-3b82f6)](https://www.python.org/)
@@ -26,7 +28,7 @@ You're also encouraged to fork this project and build your own version. The code
 
 ## Features
 
-- **Interactive Price & Volume Charts** — view any tracked stock from 1-day intraday all the way back to 3 years, with OHLCV tooltips and dynamic coloring (green/red)
+- **Interactive Price & Volume Charts** — view any tracked stock from 1-day intraday all the way back to 3 years, with OHLCV tooltips and dynamic coloring (green/red), switchable between candlestick and area chart modes
 - **Live Price Updates** — current price refreshes every 2 minutes while the market is open; pre-market and after-hours data shown with timezone info
 - **OHLCV Stats Block** — Open, High, Low, Close, Volume and day change (%) in one glance
 - **Analyst Price Targets** — visual range bar showing low/high/mean/median targets vs. current price, with upside % calculated
@@ -36,7 +38,9 @@ You're also encouraged to fork this project and build your own version. The code
 - **Peer Comparison** — normalized % change chart to compare stocks in the same industry or sector side-by-side
 - **Watchlist Management** — add and remove tickers from your personal list; stocks are organized by industry and sector tabs
 - **Portfolio Tracker** — log buy and sell transactions with FIFO cost-basis, track unrealized and realized P&L per holding, and export your full portfolio to Excel
-- **Health Dashboard** — monitor API latency with a rolling history chart so you know when data is stale
+- **Market Status Indicator** — live NYSE open/closed pill in the navbar; click to see pre-market, regular, and after-hours session times in both Eastern Time and your local timezone, with a manual refresh
+- **Backend Health Monitor** — API status pill in the navbar shows online/offline state with current latency, a quality rating, and a rolling log of the last 5 health checks; auto-checks every 30 seconds
+- **Dark / Light Mode** — toggle between dark and light themes with a cyberpunk ripple transition; preference persists across sessions
 
 ---
 
@@ -260,7 +264,7 @@ If users report missing or stale data and the app itself is healthy (check `/hea
 |-------|-----------|
 | Backend | Python 3.12, FastAPI, Uvicorn |
 | Data | yfinance, pandas, pandas-market-calendars |
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS, Recharts |
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, Recharts, React Router DOM |
 | Packaging | PyInstaller, uv |
 | CI/CD | GitHub Actions |
 
